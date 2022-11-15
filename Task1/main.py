@@ -16,9 +16,7 @@ feature_names = iris_ds.feature_names
 
 show_data(X, y, feature_names, numbers_of_features)
 
-models = [
-    PotentialKNeighborsClassifier(distance=euclidean_distance, kernel=potential_kernel, window_width=1)
-]
+model = PotentialKNeighborsClassifier(distance=euclidean_distance, kernel=potential_kernel, window_width=1)
 
 X_train_set, X_test_set, y_train_set, y_test_set = train_test_split(X, y, test_size=0.2, random_state=0)
 kF = KFold(n_splits=5, shuffle=True, random_state=1)
@@ -26,13 +24,14 @@ kF = KFold(n_splits=5, shuffle=True, random_state=1)
 X = X_train_set
 y = y_train_set
 scores = []
+
 with open("cross_validation_results.txt", 'w') as file:
     for train_index, test_index in kF.split(X):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        models[0].fit(X_train, y_train)
-        predictions = models[0].predict(X_test)
+        model.fit(X_train, y_train)
+        predictions = model.predict(X_test)
         scores.append(np.sum(y_test == predictions) / len(predictions))
         file.write("The cross-validation scores using custom method are \n{0}".format(scores))
         file.write('\n')
@@ -42,11 +41,9 @@ with open("cross_validation_results.txt", 'w') as file:
 
 X_train_set, X_test_set, y_train_set, y_test_set = train_test_split(X, y, test_size=0.2, random_state=0)
 
-for model in models:
-    model.fit(X_train_set, y_train_set)
+model.fit(X_train_set, y_train_set)
 
-result_printer(models[0], y_test_set, X_test_set)
+result_printer(model, y_test_set, X_test_set)
 
-models[0].predict_with_visualizer_no_modified(X_train_set, y_train_set, 0, 1, feature_names)
-models[0].predict_with_visualizer_no_modified(X_train_set, y_train_set, 0, 2, feature_names)
+model.predict_with_visualizer_no_modified(X_train_set, y_train_set, numbers_of_features, feature_names)
 # * - zero potentials
