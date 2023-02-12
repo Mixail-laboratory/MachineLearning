@@ -1,6 +1,4 @@
-from matplotlib import pyplot as plt
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y
 from sklearn import metrics
 
 from Distance import *
@@ -19,18 +17,22 @@ class PotentialKNeighborsClassifier(BaseEstimator):
         self.train_x = None
         self.train_y = None
 
-        self.zero_x = None
-        self.zero_y = None
+        self.zero_weights = None
+        self.valid_indixes = None
+        
 
     def predict(self, x: np.array):
         test_x = np.copy(x)
 
         if len(test_x.shape) < 2:
             test_x = test_x[np.newaxis, :]
+        self.valid_indixes = np.arange(0, len(test_x))    
 
         u = test_x[:, np.newaxis, :]
         v = self.train_x[np.newaxis, :, :]
         weights = self.gammas * self.Kernel(euclidean_distance(u, v) / self.window_width)
+
+       
         scores = np.vstack(
             [np.sum(weights.T[np.where(self.train_y == 0)[0]].T, axis=1),
              np.sum(weights.T[np.where(self.train_y == 1)[0]].T, axis=1),
@@ -45,25 +47,15 @@ class PotentialKNeighborsClassifier(BaseEstimator):
         self.train_y = np.copy(train_y)
 
         self.indexes = np.arange(0, len(train_y))
-
+        
         for _ in range(self.epoch_number):
             for i in range(self.train_x.shape[0]):
                 if self.predict(self.train_x[i]) != self.train_y[i]:
                     self.gammas[i] += 1
 
         # get samples with zero potentials
-        zero_mask = self.gammas == 0
-        self.zero_x = self.train_x[zero_mask, ...]
-        self.zero_y = self.train_y[zero_mask, ...]
-        self.indexes = self.indexes[zero_mask, ...]
-
-    def get_bad_prediction_arr(self, test_x, test_y):
-        bad_predictions_array = list()
-        predict_arr = self.predict(test_x)
-        for i in range(len(test_y)):
-            if predict_arr[i] != test_y[i]:
-                bad_predictions_array.append(i)
-        return bad_predictions_array
+        non_zero_mask = self.gammas != 0
+        self.indexes = self.indexes[non_zero_mask, ...]
 
     def show_accuracy(self, X, y, test_x, test_y):
         predict_arr = self.predict(test_x)
